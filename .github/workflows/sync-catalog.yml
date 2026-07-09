@@ -21,7 +21,14 @@ jobs:
         with:
           node-version: 22
 
-      - run: npm ci
+      - name: Install dependencies (with retry)
+        run: |
+          for i in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $i/3), retrying in 10s..."
+            sleep 10
+          done
+          exit 1
 
       - run: npx playwright install --with-deps chromium
 

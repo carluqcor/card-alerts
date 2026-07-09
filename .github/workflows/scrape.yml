@@ -26,7 +26,16 @@ jobs:
         with:
           node-version: 22
 
-      - run: npm ci
+      # Runs unattended on a schedule, so a one-off registry network blip (ECONNRESET etc.)
+      # shouldn't silently skip a whole day's checks with nobody around to retry it.
+      - name: Install dependencies (with retry)
+        run: |
+          for i in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $i/3), retrying in 10s..."
+            sleep 10
+          done
+          exit 1
 
       - run: npx playwright install --with-deps chromium
 
