@@ -21,28 +21,32 @@ export interface PreviousCheck {
   promo_label: string | null;
 }
 
-// A crashed browser's close() can hang indefinitely waiting for a shutdown acknowledgment
-// that never arrives — capping it with a timeout keeps one bad target from stalling the run.
-async function closeBrowserSafely(browser: Browser): Promise<void> {
+// A crashed browser/context's close() can hang indefinitely waiting for a shutdown
+// acknowledgment that never arrives — capping it with a timeout keeps one bad target
+// from stalling the whole run.
+async function closeSafely(closable: { close(): Promise<void> }): Promise<void> {
   await Promise.race([
-    browser.close().catch(() => {}),
+    closable.close().catch(() => {}),
     new Promise<void>((resolve) => setTimeout(resolve, 5000)),
   ]);
 }
 
-async function scrapeOneTarget(target: Target): Promise<ScrapeResult> {
-  // Each target gets its own browser session — Cloudflare (and likely similar bot
-  // protection on other sites) scores multiple navigations in one session as bot
-  // behavior and blocks the second one, even with delays in between.
-  const browser = await launchBrowser();
-  try {
+async function scrapeOneTarget(browser: Browser, target: Target): Promise<ScrapeResult> {
+  // Cloudflare (and likely similar bot protection on other sites) scores multiple
+  // navigations sharing cookies/storage as bot behavior — a fresh incognito context per
+  // target dodges that without paying the cost of relaunching a whole Chromium process
+  // each time (confirmed by testing: 10 back-to-back fresh-context navigations against a
+  // real product page all succeeded, each taking ~2s instead of the several extra seconds
+  // a full browser relaunch adds).
+  const context = await browser.newContext({
+    locale: "es-ES",
     // Playwright's default headless fingerprint gets served a stripped/challenge page on
     // some sites (no error thrown, just missing data) — a realistic UA avoids that.
-    const page = await browser.newPage({
-      locale: "es-ES",
-      userAgent:
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    });
+    userAgent:
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  });
+  try {
+    const page = await context.newPage();
     const scraper = scrapeBySite(target.site);
     return await scraper(page, {
       id: target.id,
@@ -54,7 +58,7 @@ async function scrapeOneTarget(target: Target): Promise<ScrapeResult> {
       existingImageUrl: target.image_url,
     });
   } finally {
-    await closeBrowserSafely(browser);
+    await closeSafely(context);
   }
 }
 
@@ -63,6 +67,8 @@ export async function runScrape(): Promise<void> {
 
   const targets = await getActiveTargets();
   console.log(`Scraping ${targets.length} targets`);
+
+  let browser = await launchBrowser();
 
   for (const [index, target] of targets.entries()) {
     if (index > 0) {
@@ -73,7 +79,14 @@ export async function runScrape(): Promise<void> {
     console.log(`[${index + 1}/${targets.length}] Scraping ${target.name} (${target.site})...`);
 
     try {
-      const result = await scrapeOneTarget(target);
+      // Contexts are isolated from each other, so one bad page shouldn't take down the
+      // shared browser — but if it somehow does, relaunch rather than losing the rest of the run.
+      if (!browser.isConnected()) {
+        console.warn("  Shared browser disconnected, relaunching...");
+        browser = await launchBrowser();
+      }
+
+      const result = await scrapeOneTarget(browser, target);
       const previous: PreviousCheck | null = await getLastCheck(target.id);
       // Fetched before insertCheck so it reflects history strictly before this check.
       const historicalMinPrice = await getMinPrice(target.id);
@@ -102,6 +115,8 @@ export async function runScrape(): Promise<void> {
       console.error(`  -> FAILED: ${target.name} (${target.site}):`, err);
     }
   }
+
+  await closeSafely(browser);
 }
 
 export interface NotifyEvents {

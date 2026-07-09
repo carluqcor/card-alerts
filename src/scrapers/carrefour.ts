@@ -78,20 +78,23 @@ async function detectInStock(page: Page): Promise<boolean | null> {
 }
 
 async function detectOriginalPrice(page: Page): Promise<number | null> {
-  const text = await page
-    .locator(STRIKETHROUGH_PRICE_SELECTOR)
-    .first()
-    .textContent({ timeout: 3000 })
-    .catch(() => null);
+  const locator = page.locator(STRIKETHROUGH_PRICE_SELECTOR).first();
+  // .count() checks the current DOM immediately with no waiting, unlike .textContent()/
+  // .getAttribute() which auto-wait up to their full timeout before giving up on a missing
+  // element — most products have no strikethrough price, so that wait was pure dead time.
+  if ((await locator.count()) === 0) return null;
+  const text = await locator.textContent().catch(() => null);
   return parsePrice(text).amount;
 }
 
 async function detectPromoLabel(page: Page): Promise<string | null> {
   const badge = page.locator(PROMO_BADGE_SELECTOR).first();
-  const title = await badge.getAttribute("title", { timeout: 3000 }).catch(() => null);
+  if ((await badge.count()) === 0) return null;
+
+  const title = await badge.getAttribute("title").catch(() => null);
   if (title) return title.trim();
 
-  const text = await badge.textContent({ timeout: 3000 }).catch(() => null);
+  const text = await badge.textContent().catch(() => null);
   return text ? text.trim() : null;
 }
 
