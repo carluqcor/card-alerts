@@ -1,4 +1,5 @@
 name: Scrape prices and stock
+# (touch to re-trigger GitHub's workflow indexer)
 
 on:
   schedule:
