@@ -17,7 +17,7 @@ export const handler: Handler = async () => {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
     },
-    body: JSON.stringify({ ref: "main" }),
+    body: JSON.stringify({ ref: "master" }),
   });
 
   if (!res.ok) {
