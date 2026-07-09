@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Stock & Price Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --surface-1: #fcfcfb;
+        --page: #f9f9f7;
+        --text-primary: #0b0b0b;
+        --text-secondary: #52514e;
+        --text-muted: #898781;
+        --border: rgba(11, 11, 11, 0.1);
+        --gridline: #e1e0d9;
+        --good: #0ca30c;
+        --good-bg: rgba(12, 163, 12, 0.12);
+        --critical: #d03b3b;
+        --critical-bg: rgba(208, 59, 59, 0.12);
+        --muted-bg: rgba(137, 135, 129, 0.14);
+        --promo: #d95926;
+        --promo-bg: rgba(217, 89, 38, 0.14);
+        /* Fixed (non-themed) — these sit on top of product photos, not page chrome,
+           so they need one reliable white-text-on-solid-fill contrast in both modes. */
+        --chip-good: #0ca30c;
+        --chip-critical: #d03b3b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --surface-1: #1a1a19;
+          --page: #0d0d0d;
+          --text-primary: #ffffff;
+          --text-secondary: #c3c2b7;
+          --text-muted: #898781;
+          --border: rgba(255, 255, 255, 0.1);
+          --gridline: #2c2c2a;
+          --good: #0ca30c;
+          --good-bg: rgba(12, 163, 12, 0.18);
+          --critical: #e66767;
+          --critical-bg: rgba(230, 103, 103, 0.16);
+          --muted-bg: rgba(137, 135, 129, 0.18);
+          --promo: #d95926;
+          --promo-bg: rgba(217, 89, 38, 0.2);
+        }
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        margin: 0;
+        background: var(--page);
+        color: var(--text-primary);
+      }
+      .page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 4rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+
+      .header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.5rem;
+      }
+
+      .trigger-btn {
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface-1);
+        color: var(--text-primary);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .trigger-btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
+      .trigger-status {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 1.25rem;
+        min-height: 1em;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.75rem;
+      }
+      .stat-tile {
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+      }
+      .stat-tile .value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .stat-tile .label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.15rem;
+      }
+
+      .filters {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+      }
+      .filters button {
+        font: inherit;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface-1);
+        color: var(--text-secondary);
+        cursor: pointer;
+      }
+      .filters button[aria-pressed="true"] {
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 1rem;
+      }
+
+      .card {
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.15s ease;
+      }
+      .card:hover {
+        border-color: var(--text-secondary);
+      }
+
+      .card__image {
+        aspect-ratio: 1 / 1;
+        background: var(--muted-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .card__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 0.75rem;
+      }
+      .card__image .placeholder {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+      }
+
+      /* Badges sit on top of arbitrary product photos (often white), not the page —
+         so they get their own fixed dark scrim + solid fills instead of theme tokens,
+         guaranteeing contrast regardless of what the image looks like. */
+      .card__image::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4.4rem;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45), transparent);
+        pointer-events: none;
+      }
+
+      .chip {
+        position: absolute;
+        top: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        line-height: 1.4;
+        color: #ffffff;
+      }
+      .chip::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        display: inline-block;
+      }
+      .chip--status { left: 0.5rem; }
+      .chip--good { background: var(--chip-good); }
+      .chip--critical { background: var(--chip-critical); }
+      .chip--unknown { background: rgba(30, 30, 28, 0.72); }
+
+      .chip--offer {
+        left: 0.5rem;
+        top: 2.1rem;
+        background: var(--promo);
+      }
+
+      .chip--site {
+        right: 0.5rem;
+        background: rgba(30, 30, 28, 0.55);
+        backdrop-filter: blur(2px);
+      }
+      .chip--site::before { display: none; }
+
+      .card__body {
+        padding: 0.85rem 0.9rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+      }
+
+      .card__name {
+        font-size: 0.85rem;
+        font-weight: 500;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 2.3em;
+      }
+
+      .card__promo {
+        display: inline-flex;
+        align-self: flex-start;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.15rem 0.5rem;
+        border-radius: 6px;
+        background: var(--promo-bg);
+        color: var(--promo);
+      }
+
+      .card__price-row {
+        margin-top: auto;
+        display: flex;
+        align-items: baseline;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+      }
+      .card__price {
+        font-size: 1.15rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .card__original-price {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-decoration: line-through;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .card__checked-at {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+
+      .empty-state {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 3rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header-row">
+        <h1>Stock & Price Tracker</h1>
+        <button id="trigger-btn" class="trigger-btn">🔄 Actualizar ahora</button>
+      </div>
+      <div class="trigger-status" id="trigger-status" aria-live="polite"></div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="filters" id="filters">
+        <button data-filter="all" aria-pressed="true">Todos</button>
+        <button data-filter="in_stock" aria-pressed="false">En stock</button>
+        <button data-filter="out_of_stock" aria-pressed="false">Agotado</button>
+        <button data-filter="promo" aria-pressed="false">Con oferta</button>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+      // Public publishable key, safe to expose client-side — read access is governed by RLS policies.
+      const SUPABASE_URL = "https://ihqsbdagsrqxqtdtmtip.supabase.co";
+      const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JyD1_62JDn2_gg64tyDx-g_jRH31Xn_";
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+      const grid = document.getElementById("grid");
+      const statsEl = document.getElementById("stats");
+      const filtersEl = document.getElementById("filters");
+
+      let items = [];
+      let activeFilter = "all";
+
+      async function load() {
+        const { data: targets, error: targetsError } = await supabase
+          .from("targets")
+          .select("id, name, site, url, image_url")
+          .eq("active", true);
+
+        if (targetsError) {
+          grid.innerHTML = `<div class="empty-state">Error loading data: ${targetsError.message}</div>`;
+          return;
+        }
+
+        const { data: checks, error: checksError } = await supabase
+          .from("checks")
+          .select("target_id, price, currency, in_stock, original_price, promo_label, checked_at")
+          .order("checked_at", { ascending: false });
+
+        if (checksError) {
+          grid.innerHTML = `<div class="empty-state">Error loading data: ${checksError.message}</div>`;
+          return;
+        }
+
+        const latestByTarget = new Map();
+        for (const check of checks) {
+          if (!latestByTarget.has(check.target_id)) {
+            latestByTarget.set(check.target_id, check);
+          }
+        }
+
+        items = targets.map((target) => ({ target, check: latestByTarget.get(target.id) ?? null }));
+        renderStats();
+        renderGrid();
+      }
+
+      function renderStats() {
+        const total = items.length;
+        const inStock = items.filter((i) => i.check?.in_stock === true).length;
+        const outOfStock = items.filter((i) => i.check?.in_stock === false).length;
+        const withPromo = items.filter((i) => i.check?.promo_label || i.check?.original_price).length;
+
+        statsEl.innerHTML = [
+          ["Productos", total],
+          ["En stock", inStock],
+          ["Agotados", outOfStock],
+          ["Con oferta", withPromo],
+        ]
+          .map(
+            ([label, value]) => `
+            <div class="stat-tile">
+              <div class="value">${value}</div>
+              <div class="label">${label}</div>
+            </div>`
+          )
+          .join("");
+      }
+
+      function matchesFilter(item) {
+        if (activeFilter === "all") return true;
+        if (activeFilter === "in_stock") return item.check?.in_stock === true;
+        if (activeFilter === "out_of_stock") return item.check?.in_stock === false;
+        if (activeFilter === "promo") return Boolean(item.check?.promo_label || item.check?.original_price);
+        return true;
+      }
+
+      function statusChip(inStock) {
+        if (inStock === true) return `<span class="chip chip--status chip--good">En stock</span>`;
+        if (inStock === false) return `<span class="chip chip--status chip--critical">Agotado</span>`;
+        return `<span class="chip chip--status chip--unknown">Desconocido</span>`;
+      }
+
+      function offerChip(check) {
+        const hasOffer = Boolean(check?.promo_label || check?.original_price);
+        return hasOffer ? `<span class="chip chip--offer">En oferta</span>` : "";
+      }
+
+      function priceRow(check) {
+        if (!check || check.price == null) {
+          return `<div class="card__price-row"><span class="card__price">—</span></div>`;
+        }
+        const current = `${check.price.toFixed(2)} €`;
+        const original =
+          check.original_price != null && check.original_price > check.price
+            ? `<span class="card__original-price">${check.original_price.toFixed(2)} €</span>`
+            : "";
+        return `<div class="card__price-row"><span class="card__price">${current}</span>${original}</div>`;
+      }
+
+      function sortRank(item) {
+        const hasOffer = Boolean(item.check?.promo_label || item.check?.original_price);
+        if (hasOffer) return 0;
+        if (item.check?.in_stock === true) return 1;
+        if (item.check?.in_stock === false) return 2;
+        return 3;
+      }
+
+      function renderGrid() {
+        const visible = items.filter(matchesFilter).sort((a, b) => sortRank(a) - sortRank(b));
+
+        if (visible.length === 0) {
+          grid.innerHTML = `<div class="empty-state">No hay productos para este filtro.</div>`;
+          return;
+        }
+
+        grid.innerHTML = visible
+          .map(({ target, check }) => {
+            const image = target.image_url
+              ? `<img src="${target.image_url}" alt="" loading="lazy" />`
+              : `<span class="placeholder">Sin imagen</span>`;
+
+            const promoChip = check?.promo_label
+              ? `<div class="card__promo">${check.promo_label}</div>`
+              : "";
+
+            const checkedAt = check?.checked_at
+              ? new Date(check.checked_at).toLocaleString("es-ES", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "sin datos";
+
+            return `
+              <a class="card" href="${target.url}" target="_blank" rel="noopener">
+                <div class="card__image">
+                  ${image}
+                  ${statusChip(check?.in_stock ?? null)}
+                  ${offerChip(check)}
+                  <span class="chip chip--site">${target.site}</span>
+                </div>
+                <div class="card__body">
+                  <div class="card__name">${target.name}</div>
+                  ${promoChip}
+                  ${priceRow(check)}
+                  <div class="card__checked-at">Actualizado: ${checkedAt}</div>
+                </div>
+              </a>`;
+          })
+          .join("");
+      }
+
+      const triggerBtn = document.getElementById("trigger-btn");
+      const triggerStatus = document.getElementById("trigger-status");
+
+      triggerBtn.addEventListener("click", async () => {
+        triggerBtn.disabled = true;
+        triggerStatus.textContent = "Iniciando comprobación...";
+        try {
+          const res = await fetch("/.netlify/functions/manual-trigger-scrape", { method: "POST" });
+          triggerStatus.textContent = res.ok
+            ? "Comprobación iniciada. Los datos tardarán unos minutos en actualizarse."
+            : `Error al iniciar la comprobación (${res.status}).`;
+        } catch {
+          triggerStatus.textContent = "Error de red al iniciar la comprobación.";
+        } finally {
+          setTimeout(() => { triggerBtn.disabled = false; }, 30000);
+        }
+      });
+
+      filtersEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-filter]");
+        if (!btn) return;
+        activeFilter = btn.dataset.filter;
+        for (const b of filtersEl.querySelectorAll("button")) {
+          b.setAttribute("aria-pressed", String(b === btn));
+        }
+        renderGrid();
+      });
+
+      await load();
+    </script>
+  </body>
+</html>

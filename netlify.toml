@@ -1,0 +1,13 @@
+[build]
+  command = "npm install"
+  publish = "dashboard"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["playwright-core", "@sparticuz/chromium"]
+
+[functions."trigger-scrape"]
+  schedule = "0 2,6,10,14,18,22 * * *"
+
+[functions."trigger-sync-catalog"]
+  schedule = "0 1 * * *"
