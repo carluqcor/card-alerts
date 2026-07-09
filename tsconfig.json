@@ -10,5 +10,5 @@
     "outDir": "dist",
     "types": ["node"]
   },
-  "include": ["netlify/functions/**/*.ts", "scripts/**/*.ts"]
+  "include": ["src/**/*.ts", "netlify/functions/**/*.ts", "scripts/**/*.ts"]
 }

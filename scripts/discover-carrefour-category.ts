@@ -1,5 +1,5 @@
-import { crawlCarrefourCategory } from "../netlify/functions/helpers/carrefourCategoryCrawler.js";
-import { getExistingTargetUrls, insertTargets } from "../netlify/functions/helpers/db.js";
+import { crawlCarrefourCategory } from "../src/helpers/carrefourCategoryCrawler.js";
+import { getExistingTargetUrls, insertTargets } from "../src/helpers/db.js";
 
 async function main() {
   const categoryUrl = process.argv[2];

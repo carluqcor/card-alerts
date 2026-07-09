@@ -1,5 +1,4 @@
-import type { Handler } from "@netlify/functions";
-import type { Browser } from "playwright-core";
+import type { Browser } from "playwright";
 import { launchBrowser } from "./helpers/browser.js";
 import { randomJitter } from "./helpers/jitter.js";
 import {
@@ -15,35 +14,6 @@ import { scrapeBySite, type ScrapeResult } from "./scrapers/index.js";
 
 const JITTER_MAX_MINUTES = Number(process.env.JITTER_MAX_MINUTES ?? 20);
 
-// Launching many sequential Chromium instances in one invocation's container exhausts the
-// free-tier Lambda's memory (observed: browsers start getting killed mid-navigation after ~5
-// launches in one run). So each invocation only processes a small mini-batch, then triggers
-// the next one itself before returning — a self-chaining sequence rather than one giant loop.
-// trigger-scrape.ts (on its 4-hourly schedule) only ever has to kick off batch 0; this file
-// chains through the rest, so a full run of all targets still completes within one 4-hour window.
-const MINI_BATCH_SIZE = 5;
-
-interface BatchParams {
-  batchIndex: number;
-  batchCount: number;
-}
-
-function resolveBatchParams(event: { queryStringParameters?: Record<string, string | undefined> | null }, totalTargets: number): BatchParams {
-  const q = event.queryStringParameters ?? {};
-  const batchCount = q.batchCount != null ? Number(q.batchCount) : Math.max(1, Math.ceil(totalTargets / MINI_BATCH_SIZE));
-  const batchIndex = q.batchIndex != null ? Number(q.batchIndex) : 0;
-  return { batchIndex, batchCount };
-}
-
-async function triggerNextBatch(batchIndex: number, batchCount: number): Promise<void> {
-  const baseUrl = process.env.URL;
-  if (!baseUrl) throw new Error("Missing URL env var (site's own base address)");
-  await fetch(
-    `${baseUrl}/.netlify/functions/scrape-background?batchIndex=${batchIndex}&batchCount=${batchCount}`,
-    { method: "POST" }
-  );
-}
-
 export interface PreviousCheck {
   price: number | null;
   in_stock: boolean | null;
@@ -51,13 +21,8 @@ export interface PreviousCheck {
   promo_label: string | null;
 }
 
-// If the browser process has already crashed, browser.close() can hang indefinitely waiting
-// for a graceful-shutdown acknowledgment that will never arrive — which then hangs the whole
-// invocation until Netlify force-kills it near the 15-minute cap (observed: a ~884s duration
-// on a batch that should take ~2 minutes). A plain `Browser` from chromium.launch() doesn't
-// expose the underlying OS process (only BrowserServer/ElectronApplication do), so we can't
-// force-kill it directly — but capping close() with a timeout at least stops one crashed
-// browser from stalling the entire invocation and every chained batch after it.
+// A crashed browser's close() can hang indefinitely waiting for a shutdown acknowledgment
+// that never arrives — capping it with a timeout keeps one bad target from stalling the run.
 async function closeBrowserSafely(browser: Browser): Promise<void> {
   await Promise.race([
     browser.close().catch(() => {}),
@@ -93,22 +58,11 @@ async function scrapeOneTarget(target: Target): Promise<ScrapeResult> {
   }
 }
 
-export const handler: Handler = async (event) => {
-  const allTargets = await getActiveTargets();
+export async function runScrape(): Promise<void> {
+  await randomJitter(JITTER_MAX_MINUTES);
 
-  // Local-testing escape hatch: force a single full-catalog run instead of mini-batch chaining.
-  const forceAll = process.env.SCRAPE_BATCH_OVERRIDE === "all";
-  const { batchIndex, batchCount } = forceAll
-    ? { batchIndex: 0, batchCount: 1 }
-    : resolveBatchParams(event, allTargets.length);
-
-  // Only the first mini-batch in a chain jitters — chained calls firing seconds apart shouldn't
-  // each re-roll a multi-minute delay, that would stretch a 4-hour run across most of the day.
-  if (batchIndex === 0) await randomJitter(JITTER_MAX_MINUTES);
-
-  const targets = allTargets.filter((_, i) => i % batchCount === batchIndex);
-
-  console.log(`Batch ${batchIndex + 1}/${batchCount}: ${targets.length} of ${allTargets.length} targets`);
+  const targets = await getActiveTargets();
+  console.log(`Scraping ${targets.length} targets`);
 
   for (const [index, target] of targets.entries()) {
     if (index > 0) {
@@ -148,13 +102,7 @@ export const handler: Handler = async (event) => {
       console.error(`  -> FAILED: ${target.name} (${target.site}):`, err);
     }
   }
-
-  if (batchIndex + 1 < batchCount) {
-    await triggerNextBatch(batchIndex + 1, batchCount);
-  }
-
-  return { statusCode: 200, body: "ok" };
-};
+}
 
 export interface NotifyEvents {
   wentInStock: boolean;

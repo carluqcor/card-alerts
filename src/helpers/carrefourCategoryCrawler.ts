@@ -1,4 +1,4 @@
-import type { Browser } from "playwright-core";
+import type { Browser } from "playwright";
 import { launchBrowser } from "./browser.js";
 
 const BASE_URL = "https://www.carrefour.es";

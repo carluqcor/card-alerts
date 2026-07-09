@@ -1,13 +1,29 @@
 import type { Handler } from "@netlify/functions";
 
-// Scheduled functions (trigger-scrape.ts) reject direct HTTP calls that aren't from Netlify's
-// own scheduler, so the dashboard's manual "scan now" button needs this separate, freely
-// callable endpoint instead. It kicks off the same self-chaining mini-batch sequence.
+// The actual scraping now runs on GitHub Actions (fresh VM per run — no more shared-container
+// memory issues), not on Netlify. This function just proxies the dashboard's "scan now" button
+// to GitHub's workflow_dispatch API, since that call needs a token that can't live client-side.
 export const handler: Handler = async () => {
-  const baseUrl = process.env.URL;
-  if (!baseUrl) throw new Error("Missing URL env var (site's own base address)");
+  const token = process.env.GITHUB_TOKEN;
+  const repo = process.env.GITHUB_REPO; // "owner/repo"
+  if (!token || !repo) {
+    throw new Error("Missing GITHUB_TOKEN or GITHUB_REPO env var");
+  }
 
-  await fetch(`${baseUrl}/.netlify/functions/scrape-background`, { method: "POST" });
+  const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/scrape.yml/dispatches`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    body: JSON.stringify({ ref: "main" }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`GitHub dispatch failed: ${res.status} ${body}`);
+  }
 
   return { statusCode: 202, body: "triggered" };
 };

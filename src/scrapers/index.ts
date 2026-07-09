@@ -1,4 +1,4 @@
-import type { Page } from "playwright-core";
+import type { Page } from "playwright";
 import { scrapeAmazon } from "./amazon.js";
 import { scrapeCarrefour } from "./carrefour.js";
 import type { ScrapeResult, TargetConfig } from "./types.js";

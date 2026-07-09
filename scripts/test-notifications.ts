@@ -1,10 +1,10 @@
-import { notifyTelegram } from "../netlify/functions/helpers/notify.js";
+import { notifyTelegram } from "../src/helpers/notify.js";
 import {
   detectNotifyEvents,
   formatNotifyLines,
   type PreviousCheck,
-} from "../netlify/functions/scrape-background.js";
-import type { ScrapeResult } from "../netlify/functions/scrapers/types.js";
+} from "../src/scrape.js";
+import type { ScrapeResult } from "../src/scrapers/types.js";
 
 interface Scenario {
   label: string;

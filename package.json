@@ -4,19 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "scrape:local": "tsx scripts/run-scrape-local.ts",
-    "sync-catalog:local": "tsx scripts/run-sync-catalog-local.ts",
+    "scrape": "tsx scripts/scrape.ts",
+    "sync-catalog": "tsx scripts/sync-catalog.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts"
   },
   "dependencies": {
     "@netlify/functions": "^2.8.1",
-    "@sparticuz/chromium": "^148.0.0",
     "@supabase/supabase-js": "^2.45.4",
-    "playwright-core": "^1.61.1"
+    "playwright": "^1.61.1"
   },
   "devDependencies": {
     "@types/node": "^22.5.5",
-    "playwright": "^1.61.1",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2"
   }

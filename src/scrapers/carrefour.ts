@@ -1,4 +1,4 @@
-import type { Page } from "playwright-core";
+import type { Page } from "playwright";
 import { extractProductJsonLd } from "../helpers/structuredData.js";
 import { parsePrice } from "../helpers/parse.js";
 import { isOwnedStorageUrl, uploadProductImage } from "../helpers/storage.js";

@@ -1,4 +1,3 @@
-import type { Handler } from "@netlify/functions";
 import { crawlCarrefourCategory } from "./helpers/carrefourCategoryCrawler.js";
 import { getAllTargetsForSite, insertTargets, setTargetActive } from "./helpers/db.js";
 import { notifyTelegram } from "./helpers/notify.js";
@@ -41,7 +40,7 @@ async function notifyNewProducts(products: { url: string; name: string }[]): Pro
   await notifyTelegram(lines.join("\n"));
 }
 
-export const handler: Handler = async () => {
+export async function runSyncCatalog(): Promise<void> {
   const listingByUrl = new Map<string, string>();
   for (const categoryUrl of CATEGORY_URLS) {
     const products = await crawlCarrefourCategory(categoryUrl);
@@ -78,6 +77,4 @@ export const handler: Handler = async () => {
     await notifyCrawlLooksIncomplete(listingByUrl.size, existingActiveCount);
   }
   await notifyNewProducts(newProducts);
-
-  return { statusCode: 200, body: "ok" };
-};
+}

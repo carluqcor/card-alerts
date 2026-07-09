@@ -1,4 +1,4 @@
-import type { Page } from "playwright-core";
+import type { Page } from "playwright";
 
 interface ProductJsonLd {
   price: number | null;
