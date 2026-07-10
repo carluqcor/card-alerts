@@ -68,6 +68,7 @@ export async function insertCheck(check: {
   in_stock: boolean | null;
   original_price?: number | null;
   promo_label?: string | null;
+  campaign_label?: string | null;
   raw?: unknown;
 }) {
   const { error } = await supabase.from("checks").insert(check);

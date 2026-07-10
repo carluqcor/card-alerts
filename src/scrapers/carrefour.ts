@@ -13,9 +13,13 @@ const DEFAULT_PRICE_SELECTOR = '[data-testid="product-price"], .buybox-price';
 const SOLD_OUT_SELECTOR = ".buybox__buy--sold-out";
 const BUYBOX_SELECTOR = ".buybox__buy";
 const STRIKETHROUGH_PRICE_SELECTOR = ".buybox__price-strikethrough";
-// Covers every campaign type Carrefour runs (2nd-unit discount, 3x2, etc.) generically —
-// the badge's `title` attribute always holds the exact promo text, e.g. "2ª unidad -70%" or "3x2".
+// Covers every per-unit discount mechanic Carrefour runs (2nd-unit discount, 3x2, etc.)
+// generically — the badge's `title` attribute always holds the exact promo text, e.g.
+// "2ª unidad -70%" or "3x2".
 const PROMO_BADGE_SELECTOR = ".buybox__badge-promotions .badge__name";
+// A separate red "campaign" ribbon for site-wide sales events (e.g. "Weekend Sales"), distinct
+// from the per-unit promo badge above — a product can have either, both, or neither.
+const CAMPAIGN_BADGE_SELECTOR = ".buybox__badge-campaign .badge__name";
 
 interface CapturedImage {
   bytes: Buffer;
@@ -87,8 +91,8 @@ async function detectOriginalPrice(page: Page): Promise<number | null> {
   return parsePrice(text).amount;
 }
 
-async function detectPromoLabel(page: Page): Promise<string | null> {
-  const badge = page.locator(PROMO_BADGE_SELECTOR).first();
+async function detectBadgeLabel(page: Page, selector: string): Promise<string | null> {
+  const badge = page.locator(selector).first();
   if ((await badge.count()) === 0) return null;
 
   const title = await badge.getAttribute("title").catch(() => null);
@@ -119,11 +123,12 @@ export async function scrapeCarrefour(page: Page, target: TargetConfig): Promise
 
   const inStock = await detectInStock(page);
   const originalPrice = await detectOriginalPrice(page);
-  const promoLabel = await detectPromoLabel(page);
+  const promoLabel = await detectBadgeLabel(page, PROMO_BADGE_SELECTOR);
+  const campaignLabel = await detectBadgeLabel(page, CAMPAIGN_BADGE_SELECTOR);
   const imageUrl = await resolveImageUrl(target, jsonLd?.imageUrl ?? null, imageCapture);
 
   if (jsonLd?.price != null) {
-    return { ...jsonLd, inStock, originalPrice, promoLabel, imageUrl };
+    return { ...jsonLd, inStock, originalPrice, promoLabel, campaignLabel, imageUrl };
   }
 
   const priceText = await page
@@ -140,6 +145,7 @@ export async function scrapeCarrefour(page: Page, target: TargetConfig): Promise
     inStock,
     originalPrice,
     promoLabel,
+    campaignLabel,
     imageUrl,
     raw: { priceText },
   };

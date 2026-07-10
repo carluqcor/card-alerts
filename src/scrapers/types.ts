@@ -14,6 +14,7 @@ export interface ScrapeResult {
   inStock: boolean | null;
   originalPrice?: number | null;
   promoLabel?: string | null;
+  campaignLabel?: string | null;
   imageUrl?: string | null;
   raw?: unknown;
 }

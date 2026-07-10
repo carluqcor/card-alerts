@@ -19,6 +19,7 @@ create table if not exists checks (
   in_stock boolean,
   original_price numeric,
   promo_label text,
+  campaign_label text,
   raw jsonb
 );
 

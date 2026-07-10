@@ -19,6 +19,7 @@ export interface PreviousCheck {
   in_stock: boolean | null;
   original_price: number | null;
   promo_label: string | null;
+  campaign_label: string | null;
 }
 
 // A crashed browser/context's close() can hang indefinitely waiting for a shutdown
@@ -98,6 +99,7 @@ export async function runScrape(): Promise<void> {
         in_stock: result.inStock,
         original_price: result.originalPrice ?? null,
         promo_label: result.promoLabel ?? null,
+        campaign_label: result.campaignLabel ?? null,
         raw: result.raw,
       });
 
