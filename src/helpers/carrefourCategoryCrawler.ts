@@ -110,6 +110,15 @@ async function delayBetweenPages(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
+// Whether the crawl should stop after this page. Without a known total, a short/empty page is
+// our only "end of results" signal, so the old heuristic applies. With a known total, only trust
+// it fully reached — a short or empty page despite retries is a single bad/blocked page, not
+// real end-of-results, so we keep going rather than truncating the whole crawl over it.
+function shouldStopCrawl(cardsInPage: number, totalCollected: number, knownTotal: number | null): boolean {
+  if (knownTotal != null) return totalCollected >= knownTotal;
+  return cardsInPage < PAGE_SIZE;
+}
+
 // Crawls every page of a Carrefour category listing and returns the products actually sold by
 // Carrefour itself (seller_id === "0"), deduped by absolute URL. Marketplace-seller offers are
 // filtered out even if the category URL wasn't already scoped to "vendido por Carrefour".
@@ -123,12 +132,10 @@ export async function crawlCarrefourCategory(categoryUrl: string): Promise<Categ
     const pageUrl = pageUrlFor(categoryUrl, i * PAGE_SIZE);
     const { cards, total } = await collectPage(pageUrl, expectedCountFor(knownTotal, all.length));
     if (total != null) knownTotal = total;
-    if (cards.length === 0) break;
 
     all.push(...cards);
 
-    const doneByTotal = knownTotal != null && all.length >= knownTotal;
-    if (doneByTotal || cards.length < PAGE_SIZE) break;
+    if (shouldStopCrawl(cards.length, all.length, knownTotal)) break;
   }
 
   if (knownTotal != null && all.length < knownTotal) {
