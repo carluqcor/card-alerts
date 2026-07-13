@@ -32,7 +32,7 @@ async function closeSafely(closable: { close(): Promise<void> }): Promise<void> 
   ]);
 }
 
-async function scrapeOneTarget(browser: Browser, target: Target): Promise<ScrapeResult> {
+async function scrapeOnceWithFreshContext(browser: Browser, target: Target): Promise<ScrapeResult> {
   // Cloudflare (and likely similar bot protection on other sites) scores multiple
   // navigations sharing cookies/storage as bot behavior — a fresh incognito context per
   // target dodges that without paying the cost of relaunching a whole Chromium process
@@ -63,6 +63,22 @@ async function scrapeOneTarget(browser: Browser, target: Target): Promise<Scrape
   }
 }
 
+function looksEmpty(result: ScrapeResult): boolean {
+  return result.price == null && result.inStock == null;
+}
+
+async function scrapeOneTarget(browser: Browser, target: Target): Promise<ScrapeResult> {
+  const first = await scrapeOnceWithFreshContext(browser, target);
+  if (!looksEmpty(first)) return first;
+
+  // A completely empty result (no price, no stock, nothing) usually means the page never
+  // properly loaded in time — production-only flakiness not reproduced locally, likely extra
+  // scrutiny on CI runner IPs. A retry with a brand new context often succeeds where a stuck
+  // load didn't, the same way the category crawler's page-level retries do.
+  console.warn(`  Empty result for ${target.name}, retrying with a fresh context...`);
+  return scrapeOnceWithFreshContext(browser, target);
+}
+
 export async function runScrape(): Promise<void> {
   await randomJitter(JITTER_MAX_MINUTES);
 
@@ -88,6 +104,17 @@ export async function runScrape(): Promise<void> {
       }
 
       const result = await scrapeOneTarget(browser, target);
+
+      // Still empty even after the retry — recording this would create a bogus "no offer /
+      // unknown stock" data point, which then makes the *next* successful check look like a
+      // fresh transition (e.g. re-firing "New offer" for an offer that never actually left,
+      // or flashing "Desconocido" on the dashboard) purely because this failed attempt reset
+      // the comparison baseline. Skip it entirely rather than recording a non-reading as data.
+      if (looksEmpty(result)) {
+        console.error(`  -> FAILED: ${target.name} (${target.site}): empty result after retry, skipping`);
+        continue;
+      }
+
       const previous: PreviousCheck | null = await getLastCheck(target.id);
       // Fetched before insertCheck so it reflects history strictly before this check.
       const historicalMinPrice = await getMinPrice(target.id);
