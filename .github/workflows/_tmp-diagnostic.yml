@@ -14,7 +14,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Check reachability
         run: |
-          cat > /tmp/check.mjs << 'SCRIPT'
+          cat > check-eci.mjs << 'SCRIPT'
           import { chromium } from "playwright";
           const browser = await chromium.launch({ headless: true });
           const page = await browser.newPage({
@@ -29,4 +29,4 @@ jobs:
           console.log("Search page title:", await page.title());
           await browser.close();
           SCRIPT
-          node /tmp/check.mjs
+          node check-eci.mjs
