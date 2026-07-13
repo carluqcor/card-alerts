@@ -10,7 +10,9 @@ export const handler: Handler = async () => {
     throw new Error("Missing GITHUB_TOKEN or GITHUB_REPO env var");
   }
 
-  const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/scrape.yml/dispatches`, {
+  // Only Carrefour for now — as more site workflows are added (scrape-<site>.yml), this button
+  // will need to either dispatch all of them or become a per-site control on the dashboard.
+  const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/scrape-carrefour.yml/dispatches`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

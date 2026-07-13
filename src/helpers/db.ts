@@ -22,14 +22,12 @@ export interface Target {
   image_url: string | null;
 }
 
-export async function getActiveTargets(): Promise<Target[]> {
+export async function getActiveTargets(site?: Target["site"]): Promise<Target[]> {
   // Ordered so batching (splitting targets across scheduled runs) is stable across invocations.
-  const { data, error } = await supabase
-    .from("targets")
-    .select("*")
-    .eq("active", true)
-    .order("created_at", { ascending: true });
+  let query = supabase.from("targets").select("*").eq("active", true).order("created_at", { ascending: true });
+  if (site) query = query.eq("site", site);
 
+  const { data, error } = await query;
   if (error) throw error;
   return data ?? [];
 }

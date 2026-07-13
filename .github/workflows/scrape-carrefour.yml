@@ -1,5 +1,7 @@
-name: Scrape prices and stock
-# (touch to re-trigger GitHub's workflow indexer)
+name: Scrape prices and stock (Carrefour)
+# Each site gets its own workflow + schedule, so a new retailer's scrape/notifications never
+# interleave with another's. To add a new site: copy this file, change SCRAPE_SITE and the
+# schedule, and add a matching scraper in src/scrapers/.
 
 on:
   schedule:
@@ -15,6 +17,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      SCRAPE_SITE: carrefour
       SCRAPE_BATCH_OVERRIDE: all
       # Manual runs (the dashboard's "Actualizar ahora" button) should start immediately;
       # scheduled runs keep the randomized startup delay to avoid a perfectly predictable pattern.

@@ -79,11 +79,12 @@ async function scrapeOneTarget(browser: Browser, target: Target): Promise<Scrape
   return scrapeOnceWithFreshContext(browser, target);
 }
 
-export async function runScrape(): Promise<void> {
+export async function runScrape(site?: Target["site"]): Promise<void> {
   await randomJitter(JITTER_MAX_MINUTES);
 
-  const targets = await getActiveTargets();
-  console.log(`Scraping ${targets.length} targets`);
+  const targets = await getActiveTargets(site);
+  const siteSuffix = site ? " (site: " + site + ")" : "";
+  console.log(`Scraping ${targets.length} targets${siteSuffix}`);
 
   let browser = await launchBrowser();
 

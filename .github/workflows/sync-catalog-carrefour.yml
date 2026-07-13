@@ -1,4 +1,7 @@
-name: Sync product catalog
+name: Sync product catalog (Carrefour)
+# Carrefour-only — its category-crawl logic (src/syncCatalog.ts) is specific to Carrefour's
+# HTML. A new site's catalog auto-discovery (if it needs one) would be its own sync module
+# and its own sync-catalog-<site>.yml workflow, not an extension of this one.
 
 on:
   schedule:
