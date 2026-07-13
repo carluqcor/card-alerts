@@ -212,6 +212,7 @@ async function maybeNotify(
   const eventLines = formatNotifyLines(events, previous, result);
   if (eventLines.length === 0) return;
 
-  const lines = [`<b>${target.name}</b>`, target.url, ...eventLines];
+  const siteLabel = target.site.charAt(0).toUpperCase() + target.site.slice(1);
+  const lines = [`<b>[${siteLabel}] ${target.name}</b>`, target.url, ...eventLines];
   await notifyTelegram(lines.join("\n"));
 }

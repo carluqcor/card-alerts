@@ -139,6 +139,29 @@
         font-weight: 600;
       }
 
+      .site-tabs {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .site-tabs button {
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+      }
+      .site-tabs button[aria-pressed="true"] {
+        background: var(--surface-1);
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+      }
+
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -301,6 +324,8 @@
       </div>
       <div class="trigger-status" id="trigger-status" aria-live="polite"></div>
 
+      <div class="site-tabs" id="site-tabs"></div>
+
       <div class="stats" id="stats"></div>
 
       <div class="filters" id="filters">
@@ -325,9 +350,39 @@
       const grid = document.getElementById("grid");
       const statsEl = document.getElementById("stats");
       const filtersEl = document.getElementById("filters");
+      const siteTabsEl = document.getElementById("site-tabs");
 
       let items = [];
       let activeFilter = "all";
+      let activeSite = null;
+
+      function capitalize(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      }
+
+      function availableSites() {
+        return [...new Set(items.map((i) => i.target.site))].sort();
+      }
+
+      function itemsForActiveSite() {
+        return items.filter((i) => i.target.site === activeSite);
+      }
+
+      function renderSiteTabs() {
+        const sites = availableSites();
+        if (!activeSite || !sites.includes(activeSite)) activeSite = sites[0] ?? null;
+
+        // Only worth showing a switcher once there's more than one site to switch between.
+        siteTabsEl.innerHTML =
+          sites.length < 2
+            ? ""
+            : sites
+                .map(
+                  (site) =>
+                    `<button data-site="${site}" aria-pressed="${site === activeSite}">${capitalize(site)}</button>`
+                )
+                .join("");
+      }
 
       async function load() {
         const { data: targets, error: targetsError } = await supabase
@@ -358,15 +413,17 @@
         }
 
         items = targets.map((target) => ({ target, check: latestByTarget.get(target.id) ?? null }));
+        renderSiteTabs();
         renderStats();
         renderGrid();
       }
 
       function renderStats() {
-        const total = items.length;
-        const inStock = items.filter((i) => i.check?.in_stock === true).length;
-        const outOfStock = items.filter((i) => i.check?.in_stock === false).length;
-        const withPromo = items.filter((i) => i.check?.promo_label || i.check?.original_price).length;
+        const scoped = itemsForActiveSite();
+        const total = scoped.length;
+        const inStock = scoped.filter((i) => i.check?.in_stock === true).length;
+        const outOfStock = scoped.filter((i) => i.check?.in_stock === false).length;
+        const withPromo = scoped.filter((i) => i.check?.promo_label || i.check?.original_price).length;
 
         statsEl.innerHTML = [
           ["Productos", total],
@@ -424,7 +481,7 @@
       }
 
       function renderGrid() {
-        const visible = items.filter(matchesFilter).sort((a, b) => sortRank(a) - sortRank(b));
+        const visible = itemsForActiveSite().filter(matchesFilter).sort((a, b) => sortRank(a) - sortRank(b));
 
         if (visible.length === 0) {
           grid.innerHTML = `<div class="empty-state">No hay productos para este filtro.</div>`;
@@ -494,6 +551,17 @@
         for (const b of filtersEl.querySelectorAll("button")) {
           b.setAttribute("aria-pressed", String(b === btn));
         }
+        renderGrid();
+      });
+
+      siteTabsEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-site]");
+        if (!btn) return;
+        activeSite = btn.dataset.site;
+        for (const b of siteTabsEl.querySelectorAll("button")) {
+          b.setAttribute("aria-pressed", String(b === btn));
+        }
+        renderStats();
         renderGrid();
       });
 

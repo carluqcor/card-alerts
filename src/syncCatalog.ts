@@ -13,7 +13,7 @@ async function notifyNewProducts(products: { url: string; name: string }[]): Pro
 
   const shown = products.slice(0, 10);
   const lines = [
-    `🆕 <b>${products.length} new product${products.length > 1 ? "s" : ""} found</b>`,
+    `🆕 <b>[Carrefour] ${products.length} new product${products.length > 1 ? "s" : ""} found</b>`,
     ...shown.map((p) => `• ${p.name}\n${p.url}`),
   ];
   if (products.length > shown.length) {
@@ -34,7 +34,7 @@ async function notifyPossiblyDelisted(products: { url: string; name: string }[])
 
   const shown = products.slice(0, 10);
   const lines = [
-    `❓ <b>${products.length} product${products.length > 1 ? "s" : ""} missing from the last crawl</b> ` +
+    `❓ <b>[Carrefour] ${products.length} product${products.length > 1 ? "s" : ""} missing from the last crawl</b> ` +
       `— could be genuinely delisted, or just an incomplete crawl (this happens often). ` +
       `Verify manually before deactivating:`,
     ...shown.map((p) => `• ${p.name}\n${p.url}`),
