@@ -16,6 +16,15 @@ function findProductCandidates(parsed: unknown): Record<string, unknown>[] {
   });
 }
 
+// schema.org's `image` can legitimately be a plain URL string, an array of them, or a full
+// ImageObject with its own `.url` (seen on todohits.com) — handle all three shapes.
+function extractImageUrl(image: string | string[] | { url?: string } | undefined): string | null {
+  const candidate = Array.isArray(image) ? image[0] : image;
+  if (typeof candidate === "string") return candidate;
+  if (typeof candidate === "object" && candidate !== null) return candidate.url ?? null;
+  return null;
+}
+
 function parseProductCandidate(candidate: Record<string, unknown>): ProductJsonLd | null {
   if (candidate?.["@type"] !== "Product") return null;
 
@@ -28,14 +37,13 @@ function parseProductCandidate(candidate: Record<string, unknown>): ProductJsonL
   const availability = offer.availability as string | undefined;
   const inStock = availability ? availability.toLowerCase().includes("instock") : null;
 
-  const image = candidate.image as string | string[] | undefined;
-  const imageUrl = Array.isArray(image) ? image[0] : image;
+  const imageUrl = extractImageUrl(candidate.image as string | string[] | { url?: string } | undefined);
 
   return {
     price: Number.isFinite(price) ? price : null,
     currency: (offer.priceCurrency as string) ?? null,
     inStock,
-    imageUrl: typeof imageUrl === "string" ? imageUrl : null,
+    imageUrl,
   };
 }
 

@@ -1,6 +1,6 @@
 export interface TargetConfig {
   id: string;
-  site: "amazon" | "carrefour" | "boosterbox";
+  site: "amazon" | "carrefour" | "boosterbox" | "todohits";
   url: string;
   name: string;
   priceSelector?: string;
