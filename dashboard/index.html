@@ -533,7 +533,8 @@
         triggerBtn.disabled = true;
         triggerStatus.textContent = "Iniciando comprobación...";
         try {
-          const res = await fetch("/.netlify/functions/manual-trigger-scrape", { method: "POST" });
+          const site = activeSite ?? "carrefour";
+          const res = await fetch(`/.netlify/functions/manual-trigger-scrape?site=${encodeURIComponent(site)}`, { method: "POST" });
           triggerStatus.textContent = res.ok
             ? "Comprobación iniciada. Los datos tardarán unos minutos en actualizarse."
             : `Error al iniciar la comprobación (${res.status}).`;

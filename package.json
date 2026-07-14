@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "scrape": "tsx scripts/scrape.ts",
-    "sync-catalog": "tsx scripts/sync-catalog.ts",
+    "sync-catalog:carrefour": "tsx scripts/sync-catalog.ts",
+    "sync-catalog:boosterbox": "tsx scripts/sync-catalog-boosterbox.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts"
   },
   "dependencies": {

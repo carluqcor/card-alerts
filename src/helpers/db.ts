@@ -13,7 +13,7 @@ export const supabase = createClient(url, serviceRoleKey);
 
 export interface Target {
   id: string;
-  site: "amazon" | "carrefour";
+  site: "amazon" | "carrefour" | "boosterbox";
   url: string;
   name: string;
   active: boolean;
