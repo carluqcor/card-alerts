@@ -286,6 +286,18 @@
         color: var(--promo);
       }
 
+      .card__note {
+        font-size: 0.72rem;
+        line-height: 1.35;
+        padding: 0.4rem 0.55rem;
+        border-radius: 6px;
+        background: rgba(184, 134, 11, 0.16);
+        color: #7a5900;
+      }
+      @media (prefers-color-scheme: dark) {
+        .card__note { color: #ffcf66; background: rgba(224, 178, 61, 0.18); }
+      }
+
       .card__price-row {
         margin-top: auto;
         display: flex;
@@ -485,8 +497,11 @@
         const hasOffer = Boolean(item.check?.promo_label || item.check?.original_price);
         if (hasOffer) return 0;
         if (item.check?.in_stock === true) return 1;
-        if (item.check?.in_stock === false) return 2;
-        return 3;
+        if (item.check?.in_stock === false) return 3;
+        // Null/unverified (plain "Desconocido" or a noted "Revisar" state) is more likely to be
+        // actionable than a confirmed out-of-stock item, so it sorts before "Agotado" — no
+        // reason to bury a possibly-available item at the very bottom of the grid.
+        return 2;
       }
 
       function renderGrid() {
@@ -505,6 +520,10 @@
 
             const promoChip = check?.promo_label
               ? `<div class="card__promo">${check.promo_label}</div>`
+              : "";
+
+            const noteBox = check?.raw?.note
+              ? `<div class="card__note">${check.raw.note}</div>`
               : "";
 
             const checkedAt = check?.checked_at
@@ -527,6 +546,7 @@
                 <div class="card__body">
                   <div class="card__name">${target.name}</div>
                   ${promoChip}
+                  ${noteBox}
                   ${priceRow(check)}
                   <div class="card__checked-at">Actualizado: ${checkedAt}</div>
                 </div>
