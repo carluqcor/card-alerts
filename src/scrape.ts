@@ -64,6 +64,10 @@ async function scrapeOnceWithFreshContext(browser: Browser, target: Target): Pro
 }
 
 function looksEmpty(result: ScrapeResult): boolean {
+  // A `note` means the scraper deliberately determined *why* price/stock came back null (e.g.
+  // Amazon hiding an inflated price) — a real, understood result worth recording, not a failed
+  // page load that should be retried and then discarded.
+  if (result.note) return false;
   return result.price == null && result.inStock == null;
 }
 
@@ -77,6 +81,34 @@ async function scrapeOneTarget(browser: Browser, target: Target): Promise<Scrape
   // load didn't, the same way the category crawler's page-level retries do.
   console.warn(`  Empty result for ${target.name}, retrying with a fresh context...`);
   return scrapeOnceWithFreshContext(browser, target);
+}
+
+async function recordTargetCheck(target: Target, result: ScrapeResult): Promise<void> {
+  const previous: PreviousCheck | null = await getLastCheck(target.id);
+  // Fetched before insertCheck so it reflects history strictly before this check.
+  const historicalMinPrice = await getMinPrice(target.id);
+
+  await insertCheck({
+    target_id: target.id,
+    price: result.price,
+    currency: result.currency,
+    in_stock: result.inStock,
+    original_price: result.originalPrice ?? null,
+    promo_label: result.promoLabel ?? null,
+    campaign_label: result.campaignLabel ?? null,
+    raw: result.note ? { ...(result.raw as object | null), note: result.note } : result.raw,
+  });
+
+  if (result.imageUrl && result.imageUrl !== target.image_url) {
+    await updateTargetImage(target.id, result.imageUrl);
+  }
+
+  console.log(
+    `  -> price=${result.price ?? "?"} ${result.currency ?? ""} in_stock=${result.inStock}` +
+      (result.promoLabel ? ` promo="${result.promoLabel}"` : "")
+  );
+
+  await maybeNotify(target, previous, result, historicalMinPrice);
 }
 
 export async function runScrape(site?: Target["site"]): Promise<void> {
@@ -116,31 +148,7 @@ export async function runScrape(site?: Target["site"]): Promise<void> {
         continue;
       }
 
-      const previous: PreviousCheck | null = await getLastCheck(target.id);
-      // Fetched before insertCheck so it reflects history strictly before this check.
-      const historicalMinPrice = await getMinPrice(target.id);
-
-      await insertCheck({
-        target_id: target.id,
-        price: result.price,
-        currency: result.currency,
-        in_stock: result.inStock,
-        original_price: result.originalPrice ?? null,
-        promo_label: result.promoLabel ?? null,
-        campaign_label: result.campaignLabel ?? null,
-        raw: result.raw,
-      });
-
-      if (result.imageUrl && result.imageUrl !== target.image_url) {
-        await updateTargetImage(target.id, result.imageUrl);
-      }
-
-      console.log(
-        `  -> price=${result.price ?? "?"} ${result.currency ?? ""} in_stock=${result.inStock}` +
-          (result.promoLabel ? ` promo="${result.promoLabel}"` : "")
-      );
-
-      await maybeNotify(target, previous, result, historicalMinPrice);
+      await recordTargetCheck(target, result);
     } catch (err) {
       console.error(`  -> FAILED: ${target.name} (${target.site}):`, err);
     }

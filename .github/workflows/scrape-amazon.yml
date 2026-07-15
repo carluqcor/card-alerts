@@ -1,0 +1,49 @@
+name: Scrape prices and stock (Amazon)
+# Each site gets its own workflow + schedule, so a new retailer's scrape/notifications never
+# interleave with another's. Offset from Carrefour (2,6,10,14,18,22), Boosterbox (3,7,11,15,19,23)
+# and TodoHits (1,5,9,13,17,21) to avoid simultaneous runs.
+#
+# No sync-catalog-amazon.yml — unlike the other sites' live category pages, the Amazon catalog
+# here is a static, manually curated ASIN list (see scripts/discover-amazon.ts). To track a
+# different/expanded set, update that list and re-run `npm run discover:amazon` manually.
+
+on:
+  schedule:
+    - cron: "0 0,4,8,12,16,20 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      SCRAPE_SITE: amazon
+      SCRAPE_BATCH_OVERRIDE: all
+      # Manual runs (the dashboard's "Actualizar ahora" button) should start immediately;
+      # scheduled runs keep the randomized startup delay to avoid a perfectly predictable pattern.
+      JITTER_MAX_MINUTES: ${{ github.event_name == 'workflow_dispatch' && '0' || '20' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Runs unattended on a schedule, so a one-off registry network blip (ECONNRESET etc.)
+      # shouldn't silently skip a whole day's checks with nobody around to retry it.
+      - name: Install dependencies (with retry)
+        run: |
+          for i in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $i/3), retrying in 10s..."
+            sleep 10
+          done
+          exit 1
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run scrape

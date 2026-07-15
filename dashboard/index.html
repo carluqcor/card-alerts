@@ -241,6 +241,7 @@
       .chip--good { background: var(--chip-good); }
       .chip--critical { background: var(--chip-critical); }
       .chip--unknown { background: rgba(30, 30, 28, 0.72); }
+      .chip--note { background: #b8860b; cursor: help; }
 
       .chip--offer {
         left: 0.5rem;
@@ -397,7 +398,7 @@
 
         const { data: checks, error: checksError } = await supabase
           .from("checks")
-          .select("target_id, price, currency, in_stock, original_price, promo_label, checked_at")
+          .select("target_id, price, currency, in_stock, original_price, promo_label, raw, checked_at")
           .order("checked_at", { ascending: false });
 
         if (checksError) {
@@ -449,9 +450,17 @@
         return true;
       }
 
-      function statusChip(inStock) {
+      function statusChip(check) {
+        const inStock = check?.in_stock ?? null;
         if (inStock === true) return `<span class="chip chip--status chip--good">En stock</span>`;
         if (inStock === false) return `<span class="chip chip--status chip--critical">Agotado</span>`;
+
+        // A null status can mean "we genuinely don't know" (failed scrape) or a specific,
+        // meaningful reason we couldn't verify stock/price (e.g. Amazon hiding an inflated
+        // price) — the latter is worth surfacing distinctly rather than looking identical to
+        // a broken scrape.
+        const note = check?.raw?.note;
+        if (note) return `<span class="chip chip--status chip--note" title="${note}">⚠️ Revisar</span>`;
         return `<span class="chip chip--status chip--unknown">Desconocido</span>`;
       }
 
@@ -511,7 +520,7 @@
               <a class="card" href="${target.url}" target="_blank" rel="noopener">
                 <div class="card__image">
                   ${image}
-                  ${statusChip(check?.in_stock ?? null)}
+                  ${statusChip(check)}
                   ${offerChip(check)}
                   <span class="chip chip--site">${target.site}</span>
                 </div>

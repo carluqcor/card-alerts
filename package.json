@@ -8,7 +8,8 @@
     "sync-catalog:carrefour": "tsx scripts/sync-catalog.ts",
     "sync-catalog:boosterbox": "tsx scripts/sync-catalog-boosterbox.ts",
     "sync-catalog:todohits": "tsx scripts/sync-catalog-todohits.ts",
-    "discover:carrefour": "tsx scripts/discover-carrefour-category.ts"
+    "discover:carrefour": "tsx scripts/discover-carrefour-category.ts",
+    "discover:amazon": "tsx scripts/discover-amazon.ts"
   },
   "dependencies": {
     "@netlify/functions": "^2.8.1",
