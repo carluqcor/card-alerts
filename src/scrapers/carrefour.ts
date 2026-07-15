@@ -20,6 +20,7 @@ const PROMO_BADGE_SELECTOR = ".buybox__badge-promotions .badge__name";
 // A separate red "campaign" ribbon for site-wide sales events (e.g. "Weekend Sales"), distinct
 // from the per-unit promo badge above — a product can have either, both, or neither.
 const CAMPAIGN_BADGE_SELECTOR = ".buybox__badge-campaign .badge__name";
+const SELLER_NAME_SELECTOR = ".buybox__seller-name";
 
 interface CapturedImage {
   bytes: Buffer;
@@ -69,6 +70,18 @@ async function resolveImageUrl(
   if (!image) return target.existingImageUrl ?? null;
 
   return uploadProductImage(`${target.id}.jpg`, image.bytes, image.contentType);
+}
+
+// The category listing these targets were discovered from was filtered to "sold by Carrefour"
+// at discovery time, but that doesn't guarantee the CURRENT buybox is still fulfilled by
+// Carrefour — other marketplace sellers can win the same product page's buybox later (observed:
+// "Vendido por Infopavon", "Vendido por Stock Network" instead of Carrefour, often at a higher
+// price). Verify explicitly on every check, mirroring the same seller check used for Amazon.
+async function detectSoldByCarrefour(page: Page): Promise<boolean | null> {
+  const text = await page.locator(SELLER_NAME_SELECTOR).first().textContent().catch(() => null);
+  const cleaned = text?.replace(/\s+/g, " ").trim();
+  if (!cleaned) return null;
+  return /\bCarrefour\b/i.test(cleaned);
 }
 
 async function detectInStock(page: Page): Promise<boolean | null> {
@@ -121,11 +134,19 @@ export async function scrapeCarrefour(page: Page, target: TargetConfig): Promise
     jsonLd = await extractProductJsonLd(page);
   }
 
+  const imageUrl = await resolveImageUrl(target, jsonLd?.imageUrl ?? null, imageCapture);
+
+  const soldByCarrefour = await detectSoldByCarrefour(page);
+  if (soldByCarrefour === false) {
+    // A verified third-party marketplace offer, not Carrefour's own — don't report its
+    // price/stock as if it were the thing we're actually tracking.
+    return { price: null, currency: null, inStock: null, imageUrl, note: "No vendido directamente por Carrefour" };
+  }
+
   const inStock = await detectInStock(page);
   const originalPrice = await detectOriginalPrice(page);
   const promoLabel = await detectBadgeLabel(page, PROMO_BADGE_SELECTOR);
   const campaignLabel = await detectBadgeLabel(page, CAMPAIGN_BADGE_SELECTOR);
-  const imageUrl = await resolveImageUrl(target, jsonLd?.imageUrl ?? null, imageCapture);
 
   if (jsonLd?.price != null) {
     return { ...jsonLd, inStock, originalPrice, promoLabel, campaignLabel, imageUrl };
