@@ -66,6 +66,21 @@ async function loadOnePage(browser: Browser, url: string): Promise<PageResult> {
     })
   );
 
+  // A page with zero cards AND no parsed total is ambiguous — genuinely empty category, or a
+  // bot-check/blocked page our selectors just don't match. Logging the title/URL/body snippet
+  // here is the only way to tell those apart after the fact, since this runs unattended on CI.
+  if (cards.length === 0 && total == null) {
+    const title = await page.title().catch(() => "<title read failed>");
+    const bodySnippet = await page
+      .locator("body")
+      .innerText()
+      .then((t) => t.replace(/\s+/g, " ").trim().slice(0, 300))
+      .catch(() => "<body read failed>");
+    console.error(
+      `loadOnePage: 0 cards, no total parsed. title="${title}" finalUrl="${page.url()}" bodySnippet="${bodySnippet}"`
+    );
+  }
+
   return { cards, total };
 }
 

@@ -33,10 +33,28 @@ async function findExpansionPageUrls(context: BrowserContext): Promise<string[]>
 
     const startIndex = navLinks.findIndex((l) => l.text === EXPANSION_SECTION_START);
     const endIndex = navLinks.findIndex((l) => l.text === EXPANSION_SECTION_END);
-    if (startIndex < 0 || endIndex < 0 || endIndex <= startIndex) return [];
+    if (startIndex < 0 || endIndex < 0 || endIndex <= startIndex) {
+      // Couldn't find the expected nav markers at all — genuinely no way to tell an empty/
+      // redesigned page from a bot-check/blocked one without this, since it runs unattended on CI.
+      const title = await page.title().catch(() => "<title read failed>");
+      const bodySnippet = await page
+        .locator("body")
+        .innerText()
+        .then((t) => t.replace(/\s+/g, " ").trim().slice(0, 300))
+        .catch(() => "<body read failed>");
+      console.error(
+        `findExpansionPageUrls: nav markers not found (${navLinks.length} store-page links seen). ` +
+          `title="${title}" finalUrl="${page.url()}" bodySnippet="${bodySnippet}"`
+      );
+      return [];
+    }
 
     const tabs = navLinks.slice(startIndex + 1, endIndex);
-    return [...new Set(tabs.map((l) => new URL(l.href!, BASE_URL).toString().split("?")[0]))];
+    const urls = new Set(tabs.map((l) => new URL(l.href!, BASE_URL).toString().split("?")[0]));
+    // The hub's own link sometimes reappears inside this slice (e.g. a "back to top" link within
+    // the submenu) — it has no products of its own, so crawling it just wastes a request.
+    urls.delete(EXPANSIONS_HUB_URL);
+    return [...urls];
   } finally {
     await page.close();
   }
@@ -67,6 +85,18 @@ async function crawlOneExpansionPage(context: BrowserContext, url: string): Prom
       // name — skip those in favor of the card's actual title-bearing anchor.
       if (!entry.title || /\d de 5 estrellas/i.test(entry.title)) continue;
       byAsin.set(asin, entry.title.trim());
+    }
+
+    if (byAsin.size === 0) {
+      const title = await page.title().catch(() => "<title read failed>");
+      const bodySnippet = await page
+        .locator("body")
+        .innerText()
+        .then((t) => t.replace(/\s+/g, " ").trim().slice(0, 300))
+        .catch(() => "<body read failed>");
+      console.error(
+        `crawlOneExpansionPage: 0 products found for ${url}. title="${title}" finalUrl="${page.url()}" bodySnippet="${bodySnippet}"`
+      );
     }
 
     return [...byAsin.entries()].map(([asin, name]) => ({ url: `${BASE_URL}/dp/${asin}`, name }));
