@@ -1,4 +1,4 @@
-import type { BrowserContext } from "playwright";
+import type { BrowserContext, Page } from "playwright";
 import { launchBrowser } from "./browser.js";
 
 const BASE_URL = "https://www.amazon.es";
@@ -19,11 +19,28 @@ export interface StoreProduct {
   name: string;
 }
 
+// The store page's nav renders incrementally — top-level tabs are in the initial HTML, but the
+// submenu items (the expansion tabs this crawler actually needs) attach some seconds later via
+// a separate script. A fixed short wait was observed passing locally (where it happens to
+// finish quickly) but leaving only the top-level tabs present on a slower CI run — so this polls
+// until the link count stops growing instead of guessing a fixed delay, same approach already
+// used by the Carrefour category crawler for its own lazy-loaded cards.
+async function waitForStableLinkCount(page: Page, selector: string): Promise<void> {
+  let lastCount = -1;
+  let stableRounds = 0;
+  for (let i = 0; i < 20 && stableRounds < 3; i++) {
+    await page.waitForTimeout(500);
+    const count = await page.locator(selector).count();
+    stableRounds = count === lastCount ? stableRounds + 1 : 0;
+    lastCount = count;
+  }
+}
+
 async function findExpansionPageUrls(context: BrowserContext): Promise<string[]> {
   const page = await context.newPage();
   try {
     await page.goto(EXPANSIONS_HUB_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
-    await page.waitForTimeout(2500);
+    await waitForStableLinkCount(page, "a[href*='/stores/page/']");
 
     const navLinks = await page.$$eval("a", (els) =>
       els
