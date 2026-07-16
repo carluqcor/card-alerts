@@ -1,11 +1,12 @@
 name: Sync product catalog (The Booster Box)
 # Only adds newly-seen products (see src/syncCatalogBoosterBox.ts for why deactivation isn't
 # automatic here — the listing is filtered to "in stock now", so absence just means "not
-# currently in stock", not "delisted"). Runs before the first Boosterbox scrape of the day.
+# currently in stock", not "delisted"). Runs twice daily (09:00/19:00 UTC), 15 min ahead of each
+# of the day's two scrape runs (09:15/19:15).
 
 on:
   schedule:
-    - cron: "30 0 * * *"
+    - cron: "0 9,19 * * *"
   workflow_dispatch: {}
 
 jobs:

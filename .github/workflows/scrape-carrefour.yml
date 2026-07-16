@@ -1,11 +1,14 @@
 name: Scrape prices and stock (Carrefour)
-# Each site gets its own workflow + schedule, so a new retailer's scrape/notifications never
-# interleave with another's. To add a new site: copy this file, change SCRAPE_SITE and the
-# schedule, and add a matching scraper in src/scrapers/.
+# Each site gets its own workflow, so a new retailer's scrape/notifications never interleave
+# with another's. To add a new site: copy this file, change SCRAPE_SITE, and add a matching
+# scraper in src/scrapers/. Runs twice daily (09:15/19:15 UTC, after that day's sync-catalog run)
+# — cut down from every 4 hours after Carrefour's Cloudflare protection started
+# challenge-blocking the category crawl, apparently from request-velocity scoring tied to how
+# often we hit the site.
 
 on:
   schedule:
-    - cron: "0 2,6,10,14,18,22 * * *"
+    - cron: "15 9,19 * * *"
   workflow_dispatch: {}
 
 jobs:

@@ -1,10 +1,13 @@
 name: Scrape prices and stock (The Booster Box)
-# Each site gets its own workflow + schedule, so a new retailer's scrape/notifications never
-# interleave with another's. Offset by 1h from Carrefour's schedule to avoid simultaneous runs.
+# Each site gets its own workflow, so a new retailer's scrape/notifications never interleave
+# with another's. Runs twice daily (09:15/19:15 UTC, after that day's sync-catalog run) — cut
+# down from every 4 hours to keep request volume against each site low enough to avoid
+# tripping bot-detection (confirmed happening to Carrefour's category crawl under the old,
+# more frequent schedule).
 
 on:
   schedule:
-    - cron: "0 3,7,11,15,19,23 * * *"
+    - cron: "15 9,19 * * *"
   workflow_dispatch: {}
 
 jobs:

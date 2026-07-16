@@ -1,11 +1,11 @@
 name: Sync product catalog (Amazon)
 # Only adds newly-seen products (see src/syncCatalogAmazon.ts for why deactivation isn't
-# automatic here). Amazon's first scrape of the day runs at 00:00 UTC, so this runs the evening
-# before to land ahead of it.
+# automatic here). Runs twice daily (09:00/19:00 UTC), 15 min ahead of each of the day's two
+# scrape runs (09:15/19:15).
 
 on:
   schedule:
-    - cron: "45 23 * * *"
+    - cron: "0 9,19 * * *"
   workflow_dispatch: {}
 
 jobs:
