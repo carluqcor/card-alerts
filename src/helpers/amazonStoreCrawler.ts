@@ -1,5 +1,6 @@
 import type { BrowserContext, Page } from "playwright";
 import { launchBrowser } from "./browser.js";
+import { acceptAmazonCookies } from "./amazonCookieConsent.js";
 
 const BASE_URL = "https://www.amazon.es";
 // The "Comprar por expansión" tab of the official Pokémon TCG brand store — a stable page ID
@@ -57,6 +58,7 @@ async function findExpansionPageUrls(context: BrowserContext): Promise<string[]>
   const page = await context.newPage();
   try {
     await page.goto(EXPANSIONS_HUB_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    await acceptAmazonCookies(page);
     await waitForStableLinkCount(page, "a[href*='/stores/page/']");
 
     const navLinks = await page.$$eval("a", (els) =>
@@ -98,6 +100,7 @@ async function crawlOneExpansionPage(context: BrowserContext, url: string): Prom
   const page = await context.newPage();
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    await acceptAmazonCookies(page);
     await page.waitForTimeout(2500);
     // Store pages render their product grid/carousel lazily as you scroll — a few scrolls
     // surface everything without needing to reverse-engineer each layout's own pagination.

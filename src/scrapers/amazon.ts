@@ -1,6 +1,7 @@
 import type { Page } from "playwright";
 import { extractProductJsonLd } from "../helpers/structuredData.js";
 import { parsePrice } from "../helpers/parse.js";
+import { acceptAmazonCookies } from "../helpers/amazonCookieConsent.js";
 import type { ScrapeResult, TargetConfig } from "./types.js";
 
 // Amazon rarely ships Product JSON-LD, so the CSS fallback below does most of the work.
@@ -53,6 +54,7 @@ async function detectImageUrl(page: Page): Promise<string | null> {
 
 export async function scrapeAmazon(page: Page, target: TargetConfig): Promise<ScrapeResult> {
   await page.goto(target.url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await acceptAmazonCookies(page);
   await page.waitForTimeout(2000);
 
   const imageUrl = await detectImageUrl(page);
