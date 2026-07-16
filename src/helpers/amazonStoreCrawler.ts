@@ -14,6 +14,23 @@ const EXPANSIONS_HUB_URL = "https://www.amazon.es/stores/page/5F03A804-FE47-4B0C
 const EXPANSION_SECTION_START = "Comprar por expansión";
 const EXPANSION_SECTION_END = "Comprar por producto";
 
+// Fallback list of the expansion tabs known at the time of writing (page IDs collected by
+// manually browsing the hub). Used only when the hub page's nav doesn't fully render — observed
+// in CI, where it comes back with just the top-level tabs and none of the expansion submenu
+// items, most likely because Amazon serves a reduced/less-personalized nav to a datacenter IP
+// it has no trust history with (unlike a residential IP), not something a longer wait fixes.
+// This list needs a manual add whenever Pokémon ships a new expansion AND the hub page also
+// isn't discovering it live — until then, this keeps catalog sync working at all.
+const KNOWN_EXPANSION_URLS = [
+  "87DE6119-0498-4809-A38E-632C0686D652", // Oscuridad Absoluta
+  "B0A2BFA2-57C8-44E8-8B2E-054CB7E0F131", // Caos Creciente
+  "0D587C3F-DB84-43ED-9385-E7C0D5CB91E8", // Equilibrio Perfecto
+  "1AB36771-8713-44B9-9DBC-15A7ED12349D", // Héroes Ascendentes
+  "40534B2C-819F-4E95-86AD-5BD244588925", // Fuegos Fantasmales
+  "3F62C964-56AD-4356-A476-87C9C09D20A6", // Megaevolución
+  "8F55DF02-3CE6-44B8-A320-957587FD9A4B", // Evoluciones Prismáticas
+].map((id) => `${BASE_URL}/stores/page/${id}`);
+
 export interface StoreProduct {
   url: string;
   name: string;
@@ -134,7 +151,13 @@ export async function crawlAmazonStoreByExpansion(): Promise<StoreProduct[]> {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     });
     try {
-      const expansionUrls = await findExpansionPageUrls(context);
+      const discovered = await findExpansionPageUrls(context);
+      const expansionUrls = discovered.length > 0 ? discovered : KNOWN_EXPANSION_URLS;
+      if (discovered.length === 0) {
+        console.warn(
+          `crawlAmazonStoreByExpansion: hub page nav didn't yield any expansion tabs, falling back to ${KNOWN_EXPANSION_URLS.length} known tabs`
+        );
+      }
 
       const byUrl = new Map<string, string>();
       for (const [index, expansionUrl] of expansionUrls.entries()) {
