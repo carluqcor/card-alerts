@@ -8,6 +8,7 @@
     "sync-catalog:carrefour": "tsx scripts/sync-catalog.ts",
     "sync-catalog:boosterbox": "tsx scripts/sync-catalog-boosterbox.ts",
     "sync-catalog:todohits": "tsx scripts/sync-catalog-todohits.ts",
+    "sync-catalog:amazon": "tsx scripts/sync-catalog-amazon.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts",
     "discover:amazon": "tsx scripts/discover-amazon.ts"
   },

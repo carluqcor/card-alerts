@@ -1,0 +1,38 @@
+name: Sync product catalog (Amazon)
+# Only adds newly-seen products (see src/syncCatalogAmazon.ts for why deactivation isn't
+# automatic here). Amazon's first scrape of the day runs at 00:00 UTC, so this runs the evening
+# before to land ahead of it.
+
+on:
+  schedule:
+    - cron: "45 23 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  sync-catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies (with retry)
+        run: |
+          for i in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $i/3), retrying in 10s..."
+            sleep 10
+          done
+          exit 1
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run sync-catalog:amazon
