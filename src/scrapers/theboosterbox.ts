@@ -1,6 +1,7 @@
 import type { Page } from "playwright";
 import { extractProductJsonLd } from "../helpers/structuredData.js";
 import { parsePrice } from "../helpers/parse.js";
+import { pinSpainStorefront } from "../helpers/shopifyLocalization.js";
 import type { ScrapeResult, TargetConfig } from "./types.js";
 
 // theboosterbox.es is a standard Shopify store. Its Product JSON-LD (price/currency/availability)
@@ -42,6 +43,7 @@ async function detectPromoLabel(page: Page): Promise<string | null> {
 }
 
 export async function scrapeBoosterBox(page: Page, target: TargetConfig): Promise<ScrapeResult> {
+  await pinSpainStorefront(page.context(), "theboosterbox.es");
   await page.goto(target.url, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await page.waitForTimeout(2000);
 

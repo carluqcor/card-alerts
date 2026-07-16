@@ -1,5 +1,6 @@
 import type { Browser } from "playwright";
 import { launchBrowser } from "./browser.js";
+import { pinSpainStorefront } from "./shopifyLocalization.js";
 
 const BASE_URL = "https://theboosterbox.es";
 const MAX_PAGES = 20;
@@ -21,6 +22,7 @@ async function loadOnePage(browser: Browser, url: string): Promise<{ cards: RawC
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
   });
   try {
+    await pinSpainStorefront(context, "theboosterbox.es");
     const page = await context.newPage();
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
     await page.waitForTimeout(2000);

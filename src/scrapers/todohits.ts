@@ -1,6 +1,7 @@
 import type { Page } from "playwright";
 import { extractProductJsonLd } from "../helpers/structuredData.js";
 import { parsePrice } from "../helpers/parse.js";
+import { pinSpainStorefront } from "../helpers/shopifyLocalization.js";
 import type { ScrapeResult, TargetConfig } from "./types.js";
 
 // todohits.com is a standard Shopify (Dawn-based) store. Its Product JSON-LD reports price and
@@ -27,6 +28,7 @@ async function detectOriginalPrice(page: Page): Promise<number | null> {
 }
 
 export async function scrapeTodoHits(page: Page, target: TargetConfig): Promise<ScrapeResult> {
+  await pinSpainStorefront(page.context(), "todohits.com");
   await page.goto(target.url, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await page.waitForTimeout(2000);
 
