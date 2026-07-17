@@ -6,6 +6,7 @@ import { scrapeTodoHits } from "./todohits.js";
 import { scrapeWiniGames } from "./winigames.js";
 import { scrapePokemillon } from "./pokemillon.js";
 import { scrapeKameHouseCards } from "./kamehousecards.js";
+import { scrapeEpicHitStore } from "./epichitstore.js";
 import type { ScrapeResult, TargetConfig } from "./types.js";
 
 const registry: Record<TargetConfig["site"], (page: Page, target: TargetConfig) => Promise<ScrapeResult>> = {
@@ -16,6 +17,7 @@ const registry: Record<TargetConfig["site"], (page: Page, target: TargetConfig) 
   winigames: scrapeWiniGames,
   pokemillon: scrapePokemillon,
   kamehousecards: scrapeKameHouseCards,
+  epichitstore: scrapeEpicHitStore,
 };
 
 export function scrapeBySite(site: TargetConfig["site"]) {

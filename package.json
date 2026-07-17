@@ -12,6 +12,7 @@
     "sync-catalog:winigames": "tsx scripts/sync-catalog-winigames.ts",
     "sync-catalog:pokemillon": "tsx scripts/sync-catalog-pokemillon.ts",
     "sync-catalog:kamehousecards": "tsx scripts/sync-catalog-kamehousecards.ts",
+    "sync-catalog:epichitstore": "tsx scripts/sync-catalog-epichitstore.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts",
     "discover:amazon": "tsx scripts/discover-amazon.ts"
   },

@@ -1,6 +1,14 @@
 export interface TargetConfig {
   id: string;
-  site: "amazon" | "carrefour" | "boosterbox" | "todohits" | "winigames" | "pokemillon" | "kamehousecards";
+  site:
+    | "amazon"
+    | "carrefour"
+    | "boosterbox"
+    | "todohits"
+    | "winigames"
+    | "pokemillon"
+    | "kamehousecards"
+    | "epichitstore";
   url: string;
   name: string;
   priceSelector?: string;

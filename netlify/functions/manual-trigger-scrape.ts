@@ -11,6 +11,7 @@ const SITE_WORKFLOWS: Record<string, string> = {
   winigames: "scrape-winigames.yml",
   pokemillon: "scrape-pokemillon.yml",
   kamehousecards: "scrape-kamehousecards.yml",
+  epichitstore: "scrape-epichitstore.yml",
 };
 
 // The actual scraping now runs on GitHub Actions (fresh VM per run — no more shared-container
