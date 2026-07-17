@@ -14,6 +14,7 @@ const SITE_WORKFLOWS: Record<string, string> = {
   epichitstore: "scrape-epichitstore.yml",
   elpilarceleste: "scrape-elpilarceleste.yml",
   cardzone: "scrape-cardzone.yml",
+  flashstore: "scrape-flashstore.yml",
 };
 
 // The actual scraping now runs on GitHub Actions (fresh VM per run — no more shared-container

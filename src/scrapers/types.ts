@@ -10,7 +10,8 @@ export interface TargetConfig {
     | "kamehousecards"
     | "epichitstore"
     | "elpilarceleste"
-    | "cardzone";
+    | "cardzone"
+    | "flashstore";
   url: string;
   name: string;
   priceSelector?: string;

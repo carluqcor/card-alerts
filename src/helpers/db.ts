@@ -23,7 +23,8 @@ export interface Target {
     | "kamehousecards"
     | "epichitstore"
     | "elpilarceleste"
-    | "cardzone";
+    | "cardzone"
+    | "flashstore";
   url: string;
   name: string;
   active: boolean;

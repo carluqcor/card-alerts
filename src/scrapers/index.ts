@@ -9,6 +9,7 @@ import { scrapeKameHouseCards } from "./kamehousecards.js";
 import { scrapeEpicHitStore } from "./epichitstore.js";
 import { scrapeElPilarCeleste } from "./elpilarceleste.js";
 import { scrapeCardzone } from "./cardzone.js";
+import { scrapeFlashStore } from "./flashstore.js";
 import type { ScrapeResult, TargetConfig } from "./types.js";
 
 const registry: Record<TargetConfig["site"], (page: Page, target: TargetConfig) => Promise<ScrapeResult>> = {
@@ -22,6 +23,7 @@ const registry: Record<TargetConfig["site"], (page: Page, target: TargetConfig) 
   epichitstore: scrapeEpicHitStore,
   elpilarceleste: scrapeElPilarCeleste,
   cardzone: scrapeCardzone,
+  flashstore: scrapeFlashStore,
 };
 
 export function scrapeBySite(site: TargetConfig["site"]) {

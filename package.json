@@ -15,6 +15,7 @@
     "sync-catalog:epichitstore": "tsx scripts/sync-catalog-epichitstore.ts",
     "sync-catalog:elpilarceleste": "tsx scripts/sync-catalog-elpilarceleste.ts",
     "sync-catalog:cardzone": "tsx scripts/sync-catalog-cardzone.ts",
+    "sync-catalog:flashstore": "tsx scripts/sync-catalog-flashstore.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts",
     "discover:amazon": "tsx scripts/discover-amazon.ts"
   },
