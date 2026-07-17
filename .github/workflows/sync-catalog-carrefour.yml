@@ -3,14 +3,13 @@ name: Sync product catalog (Carrefour)
 # HTML. A new site's catalog auto-discovery (if it needs one) would be its own sync module
 # and its own sync-catalog-<site>.yml workflow, not an extension of this one.
 #
-# Runs twice daily (09:00/19:00 UTC), 15 min ahead of each of the day's two scrape runs
-# (09:15/19:15) — cut down from a single daily run after Carrefour's Cloudflare protection
-# started challenge-blocking the category crawl partway through pagination, apparently from
-# request-velocity scoring tied to how often we hit the site overall.
+# No scheduled trigger — Carrefour's Cloudflare protection now reliably challenge-blocks this
+# category crawl from GitHub Actions' IP range (confirmed: the same crawl succeeds fine from a
+# residential IP). Running it on a schedule just fails every time for no benefit, so this is
+# manual-only for now (`npm run discover:carrefour <category-url>` from a non-datacenter IP,
+# or workflow_dispatch here if that ever starts working again).
 
 on:
-  schedule:
-    - cron: "0 9,19 * * *"
   workflow_dispatch: {}
 
 jobs:
