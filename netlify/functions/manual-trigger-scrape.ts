@@ -12,6 +12,7 @@ const SITE_WORKFLOWS: Record<string, string> = {
   pokemillon: "scrape-pokemillon.yml",
   kamehousecards: "scrape-kamehousecards.yml",
   epichitstore: "scrape-epichitstore.yml",
+  elpilarceleste: "scrape-elpilarceleste.yml",
 };
 
 // The actual scraping now runs on GitHub Actions (fresh VM per run — no more shared-container

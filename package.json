@@ -13,6 +13,7 @@
     "sync-catalog:pokemillon": "tsx scripts/sync-catalog-pokemillon.ts",
     "sync-catalog:kamehousecards": "tsx scripts/sync-catalog-kamehousecards.ts",
     "sync-catalog:epichitstore": "tsx scripts/sync-catalog-epichitstore.ts",
+    "sync-catalog:elpilarceleste": "tsx scripts/sync-catalog-elpilarceleste.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts",
     "discover:amazon": "tsx scripts/discover-amazon.ts"
   },

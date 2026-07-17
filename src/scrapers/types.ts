@@ -8,7 +8,8 @@ export interface TargetConfig {
     | "winigames"
     | "pokemillon"
     | "kamehousecards"
-    | "epichitstore";
+    | "epichitstore"
+    | "elpilarceleste";
   url: string;
   name: string;
   priceSelector?: string;

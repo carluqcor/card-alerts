@@ -21,7 +21,8 @@ export interface Target {
     | "winigames"
     | "pokemillon"
     | "kamehousecards"
-    | "epichitstore";
+    | "epichitstore"
+    | "elpilarceleste";
   url: string;
   name: string;
   active: boolean;
