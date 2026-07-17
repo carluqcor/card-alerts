@@ -8,6 +8,8 @@ const SITE_WORKFLOWS: Record<string, string> = {
   boosterbox: "scrape-boosterbox.yml",
   todohits: "scrape-todohits.yml",
   amazon: "scrape-amazon.yml",
+  winigames: "scrape-winigames.yml",
+  pokemillon: "scrape-pokemillon.yml",
 };
 
 // The actual scraping now runs on GitHub Actions (fresh VM per run — no more shared-container

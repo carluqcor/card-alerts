@@ -3,6 +3,8 @@ import { scrapeAmazon } from "./amazon.js";
 import { scrapeCarrefour } from "./carrefour.js";
 import { scrapeBoosterBox } from "./theboosterbox.js";
 import { scrapeTodoHits } from "./todohits.js";
+import { scrapeWiniGames } from "./winigames.js";
+import { scrapePokemillon } from "./pokemillon.js";
 import type { ScrapeResult, TargetConfig } from "./types.js";
 
 const registry: Record<TargetConfig["site"], (page: Page, target: TargetConfig) => Promise<ScrapeResult>> = {
@@ -10,6 +12,8 @@ const registry: Record<TargetConfig["site"], (page: Page, target: TargetConfig) 
   carrefour: scrapeCarrefour,
   boosterbox: scrapeBoosterBox,
   todohits: scrapeTodoHits,
+  winigames: scrapeWiniGames,
+  pokemillon: scrapePokemillon,
 };
 
 export function scrapeBySite(site: TargetConfig["site"]) {

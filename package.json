@@ -9,6 +9,8 @@
     "sync-catalog:boosterbox": "tsx scripts/sync-catalog-boosterbox.ts",
     "sync-catalog:todohits": "tsx scripts/sync-catalog-todohits.ts",
     "sync-catalog:amazon": "tsx scripts/sync-catalog-amazon.ts",
+    "sync-catalog:winigames": "tsx scripts/sync-catalog-winigames.ts",
+    "sync-catalog:pokemillon": "tsx scripts/sync-catalog-pokemillon.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts",
     "discover:amazon": "tsx scripts/discover-amazon.ts"
   },
