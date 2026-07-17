@@ -14,6 +14,7 @@
     "sync-catalog:kamehousecards": "tsx scripts/sync-catalog-kamehousecards.ts",
     "sync-catalog:epichitstore": "tsx scripts/sync-catalog-epichitstore.ts",
     "sync-catalog:elpilarceleste": "tsx scripts/sync-catalog-elpilarceleste.ts",
+    "sync-catalog:cardzone": "tsx scripts/sync-catalog-cardzone.ts",
     "discover:carrefour": "tsx scripts/discover-carrefour-category.ts",
     "discover:amazon": "tsx scripts/discover-amazon.ts"
   },

@@ -9,7 +9,8 @@ export interface TargetConfig {
     | "pokemillon"
     | "kamehousecards"
     | "epichitstore"
-    | "elpilarceleste";
+    | "elpilarceleste"
+    | "cardzone";
   url: string;
   name: string;
   priceSelector?: string;
